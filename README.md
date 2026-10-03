@@ -36,7 +36,17 @@ The script is pretty selfexplanatory.
 ```bash
 > python main.py 0 0 64 # R G B values 0-255
 
-> python main.py -h #000040 # any valid hex value, with or without hashtag
+> python main.py -h 000040 # Any valid hex value, without hashtag
 
 > python main.py # Will prompt a color picker dialogue window
+
+> python main.py -p [key] # Will pick a selected preset
+
+> python main.py -l # Will list every preset available
 ```
+
+# Config and presets
+
+`ds4led` supports config and presets. On first launch a config file will be created in `~/.config/ds4led/ds4led.json`, containing the default blue dualshock 4 led color.
+
+Every preset is a `key:value` pair, where `key` is the name and `value` is a hex code of a color.
