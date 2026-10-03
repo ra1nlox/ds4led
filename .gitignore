@@ -1,5 +1,5 @@
 # venv
-pyenv.cfg
+pyvenv.cfg
 lib
 lib64
 include
