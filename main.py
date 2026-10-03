@@ -1,7 +1,14 @@
+import json
+import os
 import subprocess
 
 import click
+from platformdirs import PlatformDirs
 from vcolorpicker import getColor, hex2rgb
+
+dirs = PlatformDirs("ds4led")
+config_file_name = "ds4led.json"
+config_file_path = os.path.join(dirs.user_config_dir, config_file_name)
 
 red_path = "/sys/class/leds/%DEVICE%:red/brightness"
 green_path = "/sys/class/leds/%DEVICE%:green/brightness"
@@ -32,8 +39,32 @@ def write_colors_in(paths: tuple[str], colors: tuple[int, int, int]) -> None:
 
 @click.command()
 @click.option("-h", "--hex", "hex", required=False, help="Specify HEX RGB value")
+@click.option(
+    "-p", "--preset", "preset", required=False, help="Use a value from config"
+)
+@click.option(
+    "-l", "--list", "list", required=False, is_flag=True, help="Lists available presets"
+)
 @click.argument("red_green_blue", required=False, nargs=3)
-def main(hex: str, red_green_blue: tuple[str, str, str]):
+def main(hex: str, preset: str, list: bool, red_green_blue: tuple[str, str, str]):
+    os.makedirs(dirs.user_config_dir, exist_ok=True)
+
+    if not os.path.exists(config_file_path):
+        with open(config_file_path, "x") as f:
+            f.close()
+        with open(config_file_path, "w") as f:
+            f.write('{\n    "default": "000040"\n}')
+
+    if list:
+        with open(config_file_path, "r") as config:
+            json_string = [line.strip() for line in config]
+            json_string = "".join(json_string)
+            config.close()
+        config_object: dict[str, str] = json.loads(json_string)
+        for key, value in config_object.items():
+            print(f"{key:<15}: {value}")
+        return
+
     device = get_device_name()
 
     if not device:
@@ -52,6 +83,19 @@ def main(hex: str, red_green_blue: tuple[str, str, str]):
             return 1
 
         colors = hex2rgb(hex)
+        write_colors_in(led_paths, colors)
+    elif preset:
+        with open(config_file_path, "r") as config:
+            json_string = [line.strip() for line in config]
+            json_string = "".join(json_string)
+            config.close()
+        config_object: dict[str, str] = json.loads(json_string)
+
+        if not preset in config_object:
+            print("Preset not found")
+            return 1
+
+        colors = hex2rgb(config_object[preset][1:])
         write_colors_in(led_paths, colors)
 
     elif red_green_blue:
